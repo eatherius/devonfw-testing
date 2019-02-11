@@ -6,7 +6,7 @@ import static io.restassured.RestAssured.given;
 import com.capgemini.mrchecker.test.core.logger.BFLogger;
 import com.capgemini.mrchecker.webapi.core.base.properties.PropertiesFileSettings;
 import com.capgemini.mrchecker.webapi.core.base.runtime.RuntimeParameters;
-import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.WireMock;
 import com.github.tomakehurst.wiremock.common.FatalStartupException;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.google.inject.Inject;
@@ -20,7 +20,7 @@ import io.restassured.specification.RequestSpecification;
 
 public class DriverManager {
 	
-	private static ThreadLocal<WireMockServer> driversVirtualServer = new ThreadLocal<WireMockServer>();
+	private static ThreadLocal<WireMock> driversVirtualServer = new ThreadLocal<WireMock>();
 	
 	private static PropertiesFileSettings propertiesFileSettings;
 	
@@ -61,8 +61,8 @@ public class DriverManager {
 		driversVirtualServer.remove();
 	}
 	
-	public static WireMockServer getDriverVirtualService() {
-		WireMockServer driver = driversVirtualServer.get();
+	public static WireMock getDriverVirtualService() {
+		WireMock driver = driversVirtualServer.get();
 		if (driver == null) {
 			driver = createDriverVirtualServer();
 			driversVirtualServer.set(driver);
@@ -78,7 +78,7 @@ public class DriverManager {
 	}
 	
 	public static void closeDriverVirtualServer() {
-		WireMockServer driverVirtualServer = driversVirtualServer.get();
+		WireMock driverVirtualServer = driversVirtualServer.get();
 		if (driverVirtualServer == null) {
 			BFLogger.logDebug("closeDriverVirtualServer() was called but there was no driver for this thread.");
 		} else {
@@ -104,10 +104,10 @@ public class DriverManager {
 		return given();
 	}
 	
-	static WireMockServer createDriverVirtualServer() {
+	static WireMock createDriverVirtualServer() {
 		BFLogger.logDebug("Creating new Mock Server");
 		
-		WireMockServer driver = Driver.WIREMOCK.getDriver();
+		WireMock driver = Driver.WIREMOCK.getDriver();
 		
 		BFLogger.logDebug("Mock server running under http://localhost:" + driver.port() + " https://localhost:" + driver.httpsPort());
 		return driver;
@@ -119,7 +119,7 @@ public class DriverManager {
 			
 			private WireMockConfiguration wireMockConfig = wireMockConfig().extensions(new BodyTransformer());
 			
-			public WireMockServer getDriver() throws FatalStartupException {
+			public WireMock getDriver() throws FatalStartupException {
 				
 				int portHttp = RuntimeParameters.MOCK_HTTP_PORT.getValue()
 								.isEmpty() ? 0 : getInteger(RuntimeParameters.MOCK_HTTP_PORT.getValue());
@@ -130,7 +130,7 @@ public class DriverManager {
 				setHttpPort(portHttp);
 				setHttpsPort(portHttps);
 				
-				WireMockServer driver = new WireMockServer(wireMockConfig);
+				WireMock driver = new WireMock(wireMockConfig);
 				
 				try {
 					driver.start();
@@ -170,7 +170,7 @@ public class DriverManager {
 			
 		};
 		
-		public WireMockServer getDriver() {
+		public WireMock getDriver() {
 			return null;
 		}
 		

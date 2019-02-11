@@ -10,7 +10,7 @@ import com.capgemini.mrchecker.test.core.BaseTest;
 import com.capgemini.mrchecker.test.core.logger.BFLogger;
 import com.capgemini.mrchecker.webapi.core.base.driver.DriverManager;
 import com.capgemini.mrchecker.webapi.endpoint.stubs.StubREST_Builder;
-import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.WireMock;
 
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -23,7 +23,7 @@ public class REST_FarenheitToCelsiusMethod_DynamicResponse extends BaseTest {
 	public static void beforeClass() {
 		
 		// Start Virtual Server
-		WireMockServer driverVirtualService = DriverManager.getDriverVirtualService();
+		WireMock driverVirtualService = DriverManager.getDriverVirtualService();
 		
 		// Get Virtual Server running http and https ports
 		int httpPort = driverVirtualService.port();

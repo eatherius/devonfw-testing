@@ -2,19 +2,45 @@ package com.capgemini.mrchecker.webapi.core.base.driver;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import org.junit.After;
 import org.junit.Test;
 
-import com.capgemini.mrchecker.webapi.core.base.driver.DriverManager;
 import com.capgemini.mrchecker.webapi.core.base.runtime.RuntimeParameters;
-import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.WireMock;
 import com.github.tomakehurst.wiremock.common.FatalStartupException;
 
 public class DriverManagerTest {
 	
-	private WireMockServer driver;
+	private WireMock driver;
+	
+	@Test
+	public void testRuntimeEnvironmentHostHttp() {
+		System.setProperty("mock_http_host", "http://test.org");
+		RuntimeParameters.MOCK_HTTP_HOST.refreshParameterValue();
+		assertEquals("System parameters for 'mock_http_host' should be 'http://test.org'", "http://test.org", RuntimeParameters.MOCK_HTTP_HOST.getValue());
+	}
+	
+	@Test
+	public void testRuntimeEnvironmentHostHttpDefaultValue() {
+		System.clearProperty("mock_http_host");
+		RuntimeParameters.MOCK_HTTP_HOST.refreshParameterValue();
+		assertEquals("System parameters for 'mock_http_host' should be 'http://localhost'", "http://localhost", RuntimeParameters.MOCK_HTTP_HOST.getValue());
+	}
+	
+	@Test
+	public void testRuntimeEnvironmentHostHttps() {
+		System.setProperty("mock_https_host", "https://test.org");
+		RuntimeParameters.MOCK_HTTPS_HOST.refreshParameterValue();
+		assertEquals("System parameters for 'mock_http_host' should be 'https://test.org'", "https://test.org", RuntimeParameters.MOCK_HTTPS_HOST.getValue());
+	}
+	
+	@Test
+	public void testRuntimeEnvironmentHostHttpSDefaultValue() {
+		System.clearProperty("mock_https_host");
+		RuntimeParameters.MOCK_HTTPS_HOST.refreshParameterValue();
+		assertEquals("System parameters for 'mock_http_host' should be 'https://localhost'", "https://localhost", RuntimeParameters.MOCK_HTTPS_HOST.getValue());
+	}
 	
 	@Test
 	public void testRuntimeEnvironmentPortHttp() {
@@ -45,7 +71,7 @@ public class DriverManagerTest {
 	}
 	
 	@Test
-	public void testWiremockServerStartPortHttpRandomPortHttps() {
+	public void testWireMockStartPortHttpRandomPortHttps() {
 		System.setProperty("mock_http_port", "8083");
 		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
 		RuntimeParameters.MOCK_HTTPS_PORT.refreshParameterValue();
@@ -56,7 +82,7 @@ public class DriverManagerTest {
 	}
 	
 	@Test
-	public void testWiremockServerStartPortHttpsRandomPortHttp() {
+	public void testWireMockStartPortHttpsRandomPortHttp() {
 		System.setProperty("mock_https_port", "8080");
 		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
 		RuntimeParameters.MOCK_HTTPS_PORT.refreshParameterValue();
@@ -67,13 +93,13 @@ public class DriverManagerTest {
 	}
 	
 	@Test
-	public void testWiremockServerStartTwoServersWithTheSameHttpPort() {
+	public void testWireMockStartTwoServersWithTheSameHttpPort() {
 		System.setProperty("mock_http_port", "8081");
 		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
 		RuntimeParameters.MOCK_HTTPS_PORT.refreshParameterValue();
 		
-		WireMockServer driver1 = null;
-		WireMockServer driver2 = null;
+		WireMock driver1 = null;
+		WireMock driver2 = null;
 		DriverManager.closeDriverVirtualServer();
 		try {
 			// Start #1 server

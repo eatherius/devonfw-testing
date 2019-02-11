@@ -11,7 +11,7 @@ import com.capgemini.mrchecker.test.core.BaseTest;
 import com.capgemini.mrchecker.test.core.logger.BFLogger;
 import com.capgemini.mrchecker.webapi.core.base.driver.DriverManager;
 import com.capgemini.mrchecker.webapi.virtualization.stubs.StubREST_Builder;
-import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.WireMock;
 
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
@@ -27,7 +27,7 @@ public class REST_FarenheitToCelsiusMethod_Test extends BaseTest {
 	public static void beforeClass() {
 		
 		// Start Virtual Server
-		WireMockServer driverVirtualService = DriverManager.getDriverVirtualService();
+		WireMock driverVirtualService = DriverManager.getDriverVirtualService();
 		
 		// Get Virtual Server running http and https ports
 		int httpPort = driverVirtualService.port();
