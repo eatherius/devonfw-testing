@@ -66,14 +66,13 @@ public class DriverManager {
 	
 	public static WireMock getDriverVirtualService() {
 		WireMock driver = driversWiremock.get();
-		if (driver == null) {
-			driver = createDriverVirtualServer().getDriver();
-			driversWiremock.set(driver);
+		if (null == driver) {
+			VirtualizedService virtualizedService = createDriverVirtualServer();
+			driversWiremock.set(virtualizedService.getDriver());
+			driversWiremockServer.set(virtualizedService.getDriverServer());
+			driver = virtualizedService.getDriver();
 			
-			WireMockServer driverServer = createDriverVirtualServer().getDriverServer();
-			driversWiremockServer.set(driverServer);
-			
-			BFLogger.logDebug("driver:" + driver.toString());
+			BFLogger.logDebug("driver: " + virtualizedService.toString());
 		}
 		return driver;
 	}
@@ -85,24 +84,26 @@ public class DriverManager {
 	}
 	
 	public static void closeDriverVirtualServer() {
-		WireMock driverWiremock = driversWiremock.get();
-		if (driverWiremock == null) {
-			BFLogger.logDebug("closeDriverVirtualServer() was called but there was no driver for this thread.");
-		} else {
-			try {
-				BFLogger.logDebug(
-						"Closing communication to Server under: " + driverWiremock.toString() + ":" + driverWiremock.get.port() + " https://localhost:" + driverWiremock.httpsPort());
-				driverWiremock.shutdown();
-				driversWiremockServer.get()
-						.stop();
-			} catch (Exception e) {
-				BFLogger.logDebug("Ooops! Something went wrong while closing the driver");
-				e.printStackTrace();
-			} finally {
-				driverWiremock = null;
-				driversWiremock.remove();
-				driversWiremockServer.remove();
+		WireMock driver = driversWiremock.get();
+		WireMockServer driverServer = driversWiremockServer.get();
+		BFLogger.logDebug(
+				"Closing communication to Server under: " + driver.toString());
+		
+		try {
+			if (null != driver) {
+				driver.shutdown();
 			}
+			
+			if (null != driverServer) {
+				driverServer.stop();
+			}
+			
+		} catch (Exception e) {
+			BFLogger.logDebug("Ooops! Something went wrong while closing the driver");
+			e.printStackTrace();
+		} finally {
+			driversWiremock.remove();
+			driversWiremockServer.remove();
 		}
 	}
 	
@@ -115,92 +116,62 @@ public class DriverManager {
 		return given();
 	}
 	
-	static VirtualizeService createDriverVirtualServer() {
+	static VirtualizedService createDriverVirtualServer() {
 		BFLogger.logDebug("Creating new Mock Server");
 		
-		VirtualizeService driver = Driver.WIREMOCK.getDriver();
+		VirtualizedService virtualizedService = Driver.WIREMOCK.getDriver();
 		
-		BFLogger.logDebug("Mock server running under http://localhost:" + driver.port() + " https://localhost:" + driver.httpsPort());
-		return driver;
+		BFLogger.logDebug("Running: " + virtualizedService.toString());
+		return virtualizedService;
 	}
-	
-	/**
-	 * @author lucst
-	 *         Container for WireMock driver
-	 */
-	class VirtualizeService {
-		
-		private WireMock		driver;
-		private WireMockServer	driverServer;
-		
-		VirtualizeService(WireMock driver, WireMockServer driverServer) {
-			this.driver = driver;
-			this.driverServer = driverServer;
-			
-		}
-		
-		public WireMock getDriver() {
-			return driver;
-		}
-		
-		public WireMockServer getDriverServer() {
-			return driverServer;
-		}
-	};
 	
 	private enum Driver {
 		
 		WIREMOCK {
 			
-			private WireMockConfiguration wireMockConfig = wireMockConfig().extensions(new BodyTransformer());
-			
-			public VirtualizeService getDriver() throws FatalStartupException {
+			public VirtualizedService getDriver() throws FatalStartupException {
 				
+				WireMock driver = null;
+				WireMockServerMrChecker driverServer = null;
+				
+				if ("".equals(getHost())) {
+					WireMockConfiguration wireMockConfig = wireMockConfig().extensions(new BodyTransformer());
+					wireMockConfig = setHttpPort(wireMockConfig, getPort());
+					driverServer = new WireMockServerMrChecker(wireMockConfig);
+					driver = driverServer.getClient();
+					
+					try {
+						driverServer.start();
+					} catch (FatalStartupException e) {
+						BFLogger.logError(e.getMessage() + "host " + getHost() + ":" + getPort());
+						throw new FatalStartupException(e);
+					}
+				} else {
+					driver = new WireMock(getHost(), getPort());
+				}
+				
+				return new VirtualizedService(driver, driverServer, getHost(), getPort());
+				
+			}
+			
+			private String getHost() {
+				String hostHttp = RuntimeParameters.MOCK_HTTP_HOST.getValue();
+				return hostHttp;
+			}
+			
+			private int getPort() {
 				int portHttp = RuntimeParameters.MOCK_HTTP_PORT.getValue()
 						.isEmpty() ? 0 : getInteger(RuntimeParameters.MOCK_HTTP_PORT.getValue());
-				
-				int portHttps = RuntimeParameters.MOCK_HTTPS_PORT.getValue()
-						.isEmpty() ? 0 : getInteger(RuntimeParameters.MOCK_HTTPS_PORT.getValue());
-				
-				String hostHttp = RuntimeParameters.MOCK_HTTP_HOST.getValue();
-				
-				setHttpHost(hostHttp);
-				setHttpPort(portHttp);
-				// setHttpsPort(portHttps);
-				
-				WireMockServer driverServer = new WireMockServer(wireMockConfig);
-				WireMock driver = new WireMock();
-				
-				try {
-					driver.start();
-				} catch (FatalStartupException e) {
-					BFLogger.logError(e.getMessage() + " http_port=" + RuntimeParameters.MOCK_HTTP_PORT.getValue() + " https_port=" + RuntimeParameters.MOCK_HTTPS_PORT.getValue());
-					throw new FatalStartupException(e);
-				}
-				return new VirtualizeService(driver, driverServer);
-				
+				return portHttp;
 			}
 			
-			private void setHttpHost(String hostHttp) {
-				if ("http://localhost" != hostHttp) {
-					this.wireMockConfig.bindAddress(RuntimeParameters.MOCK_HTTP_HOST.getValue());
-				}
-			}
-			
-			private void setHttpPort(int portHttp) {
+			private WireMockConfiguration setHttpPort(WireMockConfiguration wireMockConfig, int portHttp) {
 				if (0 != portHttp) {
-					this.wireMockConfig.port(portHttp);
+					wireMockConfig.port(portHttp);
 				} else {
-					this.wireMockConfig.dynamicPort();
+					wireMockConfig.dynamicPort();
 				}
-			}
-			
-			private void setHttpsPort(int portHttps) {
-				if (0 != portHttps) {
-					this.wireMockConfig.httpsPort(portHttps);
-				} else {
-					this.wireMockConfig.dynamicHttpsPort();
-				}
+				return wireMockConfig;
 			}
 			
 			private int getInteger(String value) {
@@ -215,7 +186,7 @@ public class DriverManager {
 			
 		};
 		
-		public VirtualizeService getDriver() {
+		public VirtualizedService getDriver() {
 			return null;
 		}
 		
