@@ -21,8 +21,8 @@ import io.restassured.specification.RequestSpecification;
 
 public class DriverManager {
 	
-	private static ThreadLocal<WireMock>		driversVirtualServices		= new ThreadLocal<WireMock>();
-	private static ThreadLocal<WireMockServer>	driversVirtualizedServer	= new ThreadLocal<WireMockServer>();
+	private static ThreadLocal<WireMock>		driversWiremock			= new ThreadLocal<WireMock>();
+	private static ThreadLocal<WireMockServer>	driversWiremockServer	= new ThreadLocal<WireMockServer>();
 	
 	private static PropertiesFileSettings propertiesFileSettings;
 	
@@ -60,18 +60,18 @@ public class DriverManager {
 	}
 	
 	public static void clearAllDrivers() {
-		driversVirtualServices.remove();
-		driversVirtualizedServer.remove();
+		driversWiremock.remove();
+		driversWiremockServer.remove();
 	}
 	
 	public static WireMock getDriverVirtualService() {
-		WireMock driver = driversVirtualServices.get();
+		WireMock driver = driversWiremock.get();
 		if (driver == null) {
 			driver = createDriverVirtualServer().getDriver();
-			driversVirtualServices.set(driver);
+			driversWiremock.set(driver);
 			
 			WireMockServer driverServer = createDriverVirtualServer().getDriverServer();
-			driversVirtualizedServer.set(driverServer);
+			driversWiremockServer.set(driverServer);
 			
 			BFLogger.logDebug("driver:" + driver.toString());
 		}
@@ -85,23 +85,23 @@ public class DriverManager {
 	}
 	
 	public static void closeDriverVirtualServer() {
-		WireMock driverVirtualServices = driversVirtualServices.get();
-		if (driverVirtualServices == null) {
+		WireMock driverWiremock = driversWiremock.get();
+		if (driverWiremock == null) {
 			BFLogger.logDebug("closeDriverVirtualServer() was called but there was no driver for this thread.");
 		} else {
 			try {
 				BFLogger.logDebug(
-						"Closing communication to Server under: " + driverVirtualServices.toString() + ":" + driverVirtualServices.port() + " https://localhost:" + driverVirtualServices.httpsPort());
-				driverVirtualServices.shutdown();
-				driversVirtualizedServer.get()
+						"Closing communication to Server under: " + driverWiremock.toString() + ":" + driverWiremock.get.port() + " https://localhost:" + driverWiremock.httpsPort());
+				driverWiremock.shutdown();
+				driversWiremockServer.get()
 						.stop();
 			} catch (Exception e) {
 				BFLogger.logDebug("Ooops! Something went wrong while closing the driver");
 				e.printStackTrace();
 			} finally {
-				driverVirtualServices = null;
-				driversVirtualServices.remove();
-				driversVirtualizedServer.remove();
+				driverWiremock = null;
+				driversWiremock.remove();
+				driversWiremockServer.remove();
 			}
 		}
 	}
@@ -168,7 +168,8 @@ public class DriverManager {
 				setHttpPort(portHttp);
 				// setHttpsPort(portHttps);
 				
-				WireMock driver = new WireMock(wireMockConfig);
+				WireMockServer driverServer = new WireMockServer(wireMockConfig);
+				WireMock driver = new WireMock();
 				
 				try {
 					driver.start();
