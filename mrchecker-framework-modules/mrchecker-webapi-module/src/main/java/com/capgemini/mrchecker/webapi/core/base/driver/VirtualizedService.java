@@ -7,14 +7,14 @@ public class VirtualizedService {
 	
 	private WireMock		driver;
 	private WireMockServer	driverServer;
-	private String			host;
-	private int				port;
+	private String			httpHost;
+	private int				httpPort;
 	
-	VirtualizedService(WireMock driver, WireMockServer driverServer, String host, int port) {
+	VirtualizedService(WireMock driver, WireMockServer driverServer, String httpHost, int httpPort) {
 		this.driver = driver;
 		this.driverServer = driverServer;
-		this.port = port;
-		this.host = host;
+		this.httpHost = httpHost;
+		this.httpPort = httpPort;
 		
 	}
 	
@@ -26,16 +26,16 @@ public class VirtualizedService {
 		return driverServer;
 	}
 	
-	public int getPort() {
-		return port;
+	public int getHttpPort() {
+		return httpPort;
 	}
 	
-	public String getHost() {
-		return host;
+	public String getHttpHost() {
+		return httpHost;
 	}
 	
 	@Override
 	public String toString() {
-		return "Service for host " + getHost() + ":" + getPort();
+		return "Service for host " + getHttpHost() + ":" + getHttpPort();
 	}
 };

@@ -26,13 +26,8 @@ public class REST_FarenheitToCelsiusMethod_DynamicResponse extends BaseTest {
 		WireMock driverVirtualService = DriverManager.getDriverVirtualService();
 		
 		// Get Virtual Server running http and https ports
-		int httpPort = driverVirtualService.port();
-		int httpsPort = driverVirtualService.httpsPort();
-		
-		// Print is Virtual server running
-		BFLogger.logDebug("Is Virtual server running: " + driverVirtualService.isRunning());
-		
-		String baseURI = "http://localhost";
+		int httpPort = DriverManager.getHttpPort();
+		String baseURI = DriverManager.getHttpHost();
 		endpointBaseUri = baseURI + ":" + httpPort;
 	}
 	

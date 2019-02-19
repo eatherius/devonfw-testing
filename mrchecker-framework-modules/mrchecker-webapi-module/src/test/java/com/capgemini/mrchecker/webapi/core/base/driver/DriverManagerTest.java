@@ -7,7 +7,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import com.capgemini.mrchecker.webapi.core.base.runtime.RuntimeParameters;
-import com.github.tomakehurst.wiremock.WireMock;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.FatalStartupException;
 
 public class DriverManagerTest {
@@ -29,31 +29,10 @@ public class DriverManagerTest {
 	}
 	
 	@Test
-	public void testRuntimeEnvironmentHostHttps() {
-		System.setProperty("mock_https_host", "https://test.org");
-		RuntimeParameters.MOCK_HTTPS_HOST.refreshParameterValue();
-		assertEquals("System parameters for 'mock_http_host' should be 'https://test.org'", "https://test.org", RuntimeParameters.MOCK_HTTPS_HOST.getValue());
-	}
-	
-	@Test
-	public void testRuntimeEnvironmentHostHttpSDefaultValue() {
-		System.clearProperty("mock_https_host");
-		RuntimeParameters.MOCK_HTTPS_HOST.refreshParameterValue();
-		assertEquals("System parameters for 'mock_http_host' should be 'https://localhost'", "https://localhost", RuntimeParameters.MOCK_HTTPS_HOST.getValue());
-	}
-	
-	@Test
 	public void testRuntimeEnvironmentPortHttp() {
 		System.setProperty("mock_http_port", "8080");
 		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
 		assertEquals("System parameters for 'mock_http_port' should be '8080'", "8080", RuntimeParameters.MOCK_HTTP_PORT.getValue());
-	}
-	
-	@Test
-	public void testRuntimeEnvironmentPortHttps() {
-		System.setProperty("mock_https_port", "8000");
-		RuntimeParameters.MOCK_HTTPS_PORT.refreshParameterValue();
-		assertEquals("System parameters for 'mock_https_port' should be '8000'", "8000", RuntimeParameters.MOCK_HTTPS_PORT.getValue());
 	}
 	
 	@Test
@@ -64,39 +43,17 @@ public class DriverManagerTest {
 	}
 	
 	@Test
-	public void testRuntimeEnvironmentPortHttpsDefaultValue() {
-		System.clearProperty("mock_https_port");
-		RuntimeParameters.MOCK_HTTPS_PORT.refreshParameterValue();
-		assertEquals("Default value for system parameters 'mock_https_port' should be ''", "", RuntimeParameters.MOCK_HTTPS_PORT.getValue());
-	}
-	
-	@Test
 	public void testWireMockStartPortHttpRandomPortHttps() {
 		System.setProperty("mock_http_port", "8083");
 		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
-		RuntimeParameters.MOCK_HTTPS_PORT.refreshParameterValue();
 		driver = DriverManager.getDriverVirtualService();
-		assertTrue("Mock server does not run", driver.isRunning());
-		assertEquals("Mock server for http does not run o port 8083", 8083, driver.port());
-		assertTrue("Mock server for https does not run on random port", (Integer) driver.httpsPort() instanceof Integer);
-	}
-	
-	@Test
-	public void testWireMockStartPortHttpsRandomPortHttp() {
-		System.setProperty("mock_https_port", "8080");
-		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
-		RuntimeParameters.MOCK_HTTPS_PORT.refreshParameterValue();
-		driver = DriverManager.getDriverVirtualService();
-		assertTrue("Mock server does not run", driver.isRunning());
-		assertEquals("Mock server for https does not run o port 8080", 8080, driver.httpsPort());
-		assertTrue("Mock server for http does not run on random port", (Integer) driver.port() instanceof Integer);
+		assertEquals("Mock server for http does not run o port 8083", 8083, DriverManager.getHttpPort());
 	}
 	
 	@Test
 	public void testWireMockStartTwoServersWithTheSameHttpPort() {
 		System.setProperty("mock_http_port", "8081");
 		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
-		RuntimeParameters.MOCK_HTTPS_PORT.refreshParameterValue();
 		
 		WireMock driver1 = null;
 		WireMock driver2 = null;
@@ -104,26 +61,22 @@ public class DriverManagerTest {
 		try {
 			// Start #1 server
 			driver1 = DriverManager.getDriverVirtualService();
-			assertTrue("Mock server does not run", driver1.isRunning());
-			assertEquals("Mock server for http does not run o port 8081", 8081, driver1.port());
-			assertTrue("Mock server for https does not run on random port", (Integer) driver1.httpsPort() instanceof Integer);
+			assertEquals("Mock server for http does not run o port 8081", 8081, DriverManager.getHttpPort());
 			
 			// Enable to add new server instances in this thread. Simulation of multithread and bind to the same port
 			DriverManager.clearAllDrivers();
 			
 			// Start #2 server
 			driver2 = DriverManager.getDriverVirtualService();
-			assertTrue("Mock server does not run", driver2.isRunning());
-			assertEquals("Mock server for http does not run o port 8081", 8081, driver2.port());
-			assertTrue("Mock server for https does not run on random port", (Integer) driver2.httpsPort() instanceof Integer);
+			assertEquals("Mock server for http does not run o port 8081", 8081, DriverManager.getHttpPort());
 		} catch (FatalStartupException e) {
 			assertTrue("No information about bind error", e.getMessage()
 					.contains("Address already in use: bind"));
 		} finally {
 			// Close all drivers
 			try {
-				driver1.stop();
-				driver2.stop();
+				driver1.shutdown();
+				driver2.shutdown();
 			} catch (Exception e) {
 			}
 		}
