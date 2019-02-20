@@ -3,6 +3,9 @@ package com.capgemini.mrchecker.webapi.core.base.driver;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static io.restassured.RestAssured.given;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+
 import com.capgemini.mrchecker.test.core.logger.BFLogger;
 import com.capgemini.mrchecker.webapi.core.base.properties.PropertiesFileSettings;
 import com.capgemini.mrchecker.webapi.core.base.runtime.RuntimeParameters;
@@ -148,18 +151,14 @@ public class DriverManager {
 				WireMock driver = null;
 				WireMockServerMrChecker driverServer = null;
 				
-				int httpPort = -1;
-				String httpHost = "";
+				int httpPort = getPort();
+				String httpHost = getHost();
 				
-				if ("".equals(getHost()) || "http://localhost".equals(getHost()) || "https://localhost".equals(getHost())) {
+				if ("".equals(httpHost) || "http://localhost".equals(httpHost) || "https://localhost".equals(httpHost)) {
 					WireMockConfiguration wireMockConfig = wireMockConfig().extensions(new BodyTransformer());
-					httpPort = getPort(wireMockConfig);
-					httpHost = getHost();
 					
-					wireMockConfig = setHttpPort(wireMockConfig, httpPort);
+					// wireMockConfig.port(httpPort);
 					driverServer = new WireMockServerMrChecker(wireMockConfig);
-					
-					driver = driverServer.getClient();
 					
 					try {
 						driverServer.start();
@@ -167,9 +166,9 @@ public class DriverManager {
 						BFLogger.logError(e.getMessage() + "host " + httpHost + ":" + httpPort);
 						throw new FatalStartupException(e);
 					}
+					driver = driverServer.getClient();
+					httpPort = driverServer.port();
 				} else {
-					httpPort = getPort();
-					httpHost = getHost();
 					driver = new WireMock(httpHost, httpPort);
 				}
 				
@@ -184,21 +183,43 @@ public class DriverManager {
 			private int getPort() {
 				return RuntimeParameters.MOCK_HTTP_PORT.getValue()
 						.isEmpty()
-								? 80
+								? this.findFreePort()
 								: getInteger(RuntimeParameters.MOCK_HTTP_PORT.getValue());
 			}
 			
-			private int getPort(WireMockConfiguration wireMockConfig) {
-				return RuntimeParameters.MOCK_HTTP_PORT.getValue()
-						.isEmpty()
-								? wireMockConfig.dynamicPort()
-										.portNumber()
-								: getInteger(RuntimeParameters.MOCK_HTTP_PORT.getValue());
-			}
-			
-			private WireMockConfiguration setHttpPort(WireMockConfiguration wireMockConfig, int portHttp) {
-				wireMockConfig.port(portHttp);
-				return wireMockConfig;
+			/**
+			 * Returns a free port number on localhost.
+			 * Heavily inspired from org.eclipse.jdt.launching.SocketUtil (to avoid a dependency to JDT just because of
+			 * this).
+			 * Slightly improved with close() missing in JDT. And throws exception instead of returning -1.
+			 * 
+			 * @return a free port number on localhost
+			 * @throws IllegalStateException
+			 *             if unable to find a free port
+			 */
+			private int findFreePort() throws IllegalStateException {
+				ServerSocket socket = null;
+				try {
+					socket = new ServerSocket(0);
+					socket.setReuseAddress(true);
+					int port = socket.getLocalPort();
+					try {
+						socket.close();
+					} catch (IOException e) {
+						// Ignore IOException on close()
+					}
+					return port;
+				} catch (IOException e) {
+				} finally {
+					if (socket != null) {
+						try {
+							socket.close();
+						} catch (IOException e) {
+							// Ignore IOException on close()
+						}
+					}
+				}
+				throw new IllegalStateException("Could not find a free TCP/IP port to start embedded Jetty HTTP Server on");
 			}
 			
 			private int getInteger(String value) {
