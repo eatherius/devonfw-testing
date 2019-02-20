@@ -38,11 +38,6 @@ public class StubREST_Builder {
 		this.statusCode = builder.statusCode;
 	}
 	
-	
-	
-	
-	
-	
 	// Builder Class
 	public static class StubBuilder {
 		

@@ -57,7 +57,7 @@ public class DriverManagerTest {
 		
 		WireMock driver1 = null;
 		WireMock driver2 = null;
-		DriverManager.closeDriverVirtualServer();
+		// DriverManager.closeDriverVirtualServer();
 		try {
 			// Start #1 server
 			driver1 = DriverManager.getDriverVirtualService();

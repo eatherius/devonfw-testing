@@ -143,17 +143,20 @@ public class DriverManager {
 		
 		WIREMOCK {
 			
-			int		httpPort	= -1;
-			String	httpHost;
-			
 			public VirtualizedService getDriver() throws FatalStartupException {
 				
 				WireMock driver = null;
 				WireMockServerMrChecker driverServer = null;
 				
+				int httpPort = -1;
+				String httpHost = "";
+				
 				if ("".equals(getHost()) || "http://localhost".equals(getHost()) || "https://localhost".equals(getHost())) {
 					WireMockConfiguration wireMockConfig = wireMockConfig().extensions(new BodyTransformer());
-					wireMockConfig = setHttpPort(wireMockConfig, getPort(wireMockConfig));
+					httpPort = getPort(wireMockConfig);
+					httpHost = getHost();
+					
+					wireMockConfig = setHttpPort(wireMockConfig, httpPort);
 					driverServer = new WireMockServerMrChecker(wireMockConfig);
 					
 					driver = driverServer.getClient();
@@ -161,43 +164,36 @@ public class DriverManager {
 					try {
 						driverServer.start();
 					} catch (FatalStartupException e) {
-						BFLogger.logError(e.getMessage() + "host " + getHost() + ":" + getPort(wireMockConfig));
+						BFLogger.logError(e.getMessage() + "host " + httpHost + ":" + httpPort);
 						throw new FatalStartupException(e);
 					}
 				} else {
-					driver = new WireMock(getHost(), getPort());
+					httpPort = getPort();
+					httpHost = getHost();
+					driver = new WireMock(httpHost, httpPort);
 				}
 				
-				return new VirtualizedService(driver, driverServer, getHost(), getPort());
+				return new VirtualizedService(driver, driverServer, httpHost, httpPort);
 				
 			}
 			
 			private String getHost() {
-				if (null == this.httpHost) {
-					httpHost = RuntimeParameters.MOCK_HTTP_HOST.getValue();
-				}
-				return httpHost;
+				return RuntimeParameters.MOCK_HTTP_HOST.getValue();
 			}
 			
 			private int getPort() {
-				if (-1 == this.httpPort) {
-					httpPort = RuntimeParameters.MOCK_HTTP_PORT.getValue()
-							.isEmpty()
-									? 80
-									: getInteger(RuntimeParameters.MOCK_HTTP_PORT.getValue());
-				}
-				return httpPort;
+				return RuntimeParameters.MOCK_HTTP_PORT.getValue()
+						.isEmpty()
+								? 80
+								: getInteger(RuntimeParameters.MOCK_HTTP_PORT.getValue());
 			}
 			
 			private int getPort(WireMockConfiguration wireMockConfig) {
-				if (-1 == this.httpPort) {
-					httpPort = RuntimeParameters.MOCK_HTTP_PORT.getValue()
-							.isEmpty()
-									? wireMockConfig.dynamicPort()
-											.portNumber()
-									: getInteger(RuntimeParameters.MOCK_HTTP_PORT.getValue());
-				}
-				return httpPort;
+				return RuntimeParameters.MOCK_HTTP_PORT.getValue()
+						.isEmpty()
+								? wireMockConfig.dynamicPort()
+										.portNumber()
+								: getInteger(RuntimeParameters.MOCK_HTTP_PORT.getValue());
 			}
 			
 			private WireMockConfiguration setHttpPort(WireMockConfiguration wireMockConfig, int portHttp) {
