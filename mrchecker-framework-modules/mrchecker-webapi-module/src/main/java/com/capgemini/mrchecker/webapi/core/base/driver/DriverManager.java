@@ -68,7 +68,14 @@ public class DriverManager {
 	public static WireMock getDriverVirtualService() {
 		VirtualizedService virtualizedService = getVirtualizedService();
 		WireMock driver = virtualizedService.getDriver();
-		BFLogger.logDebug("Driver for: " + virtualizedService.toString());
+		BFLogger.logDebug("Driver for server: " + driver.toString());
+		return driver;
+	}
+	
+	public static WireMockServer getDriverVirtualServerService() {
+		VirtualizedService virtualizedService = getVirtualizedService();
+		WireMockServer driver = virtualizedService.getDriverServer();
+		BFLogger.logDebug("Driver for virtual server: " + driver.toString());
 		return driver;
 	}
 	
@@ -157,7 +164,7 @@ public class DriverManager {
 				if ("".equals(httpHost) || "http://localhost".equals(httpHost) || "https://localhost".equals(httpHost)) {
 					WireMockConfiguration wireMockConfig = wireMockConfig().extensions(new BodyTransformer());
 					
-					// wireMockConfig.port(httpPort);
+					wireMockConfig.port(httpPort);
 					driverServer = new WireMockServerMrChecker(wireMockConfig);
 					
 					try {
@@ -167,7 +174,7 @@ public class DriverManager {
 						throw new FatalStartupException(e);
 					}
 					driver = driverServer.getClient();
-					httpPort = driverServer.port();
+					httpPort = driverServer.getWireMockPort();
 				} else {
 					driver = new WireMock(httpHost, httpPort);
 				}
