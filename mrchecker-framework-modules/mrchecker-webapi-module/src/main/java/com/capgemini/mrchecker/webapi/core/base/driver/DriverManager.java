@@ -174,7 +174,6 @@ public class DriverManager {
 						throw new FatalStartupException(e);
 					}
 					driver = driverServer.getClient();
-					httpPort = driverServer.getWireMockPort();
 				} else {
 					driver = new WireMock(httpHost, httpPort);
 				}

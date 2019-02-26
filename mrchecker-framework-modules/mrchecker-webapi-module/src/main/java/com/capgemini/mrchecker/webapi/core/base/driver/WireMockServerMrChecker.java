@@ -15,15 +15,4 @@ public class WireMockServerMrChecker extends WireMockServer implements Container
 		return super.client;
 	}
 	
-	/**
-	 * WiremockServer always starts Wiremock with Default port
-	 * com.github.tomakehurst.wiremock.client.WireMock
-	 * private static final int DEFAULT_PORT = 8080;
-	 * 
-	 * @return
-	 */
-	public int getWireMockPort() {
-		return 8080;
-	}
-	
 }
