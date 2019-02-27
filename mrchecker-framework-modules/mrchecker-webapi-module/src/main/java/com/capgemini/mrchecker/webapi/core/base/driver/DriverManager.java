@@ -111,7 +111,9 @@ public class DriverManager {
 			WireMock driver = virtualizedService.getDriver();
 			WireMockServer driverServer = virtualizedService.getDriverServer();
 			BFLogger.logDebug(
-					"Closing communication to Server under: " + driver.toString());
+					"Closing communication to Virualize Server Service under: " + driverServer.toString());
+			BFLogger.logDebug(
+					"Closing communication to Virualize Service under: " + driver.toString());
 			
 			try {
 				if (null != driver) {
@@ -126,7 +128,7 @@ public class DriverManager {
 				BFLogger.logDebug("Ooops! Something went wrong while closing the driver");
 				e.printStackTrace();
 			} finally {
-				driverVirtualizedService.remove();
+				clearAllDrivers();
 			}
 		}
 	}

@@ -80,7 +80,7 @@ public class REST_FarenheitToCelsiusMethod_Test extends BaseTest {
 				.log()
 				.all()
 				.when()
-				.get(endpointBaseUri + "/some/thing/else")
+				.get(endpointBaseUri + "/notexisting")
 				.thenReturn();
 		
 		BFLogger.logInfo("#4 Validate response ");

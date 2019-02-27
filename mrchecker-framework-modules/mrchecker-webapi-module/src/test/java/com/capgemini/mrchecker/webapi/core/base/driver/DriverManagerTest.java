@@ -3,16 +3,14 @@ package com.capgemini.mrchecker.webapi.core.base.driver;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.After;
 import org.junit.Test;
 
+import com.capgemini.mrchecker.test.core.BaseTest;
 import com.capgemini.mrchecker.webapi.core.base.runtime.RuntimeParameters;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.common.FatalStartupException;
 
-public class DriverManagerTest {
-	
-	private WireMockServer driver;
+public class DriverManagerTest extends BaseTest {
 	
 	@Test
 	public void testRuntimeEnvironmentHostHttp() {
@@ -44,10 +42,12 @@ public class DriverManagerTest {
 	
 	@Test
 	public void testWireMockStartPortHttpRandomPortHttps() {
-		System.setProperty("mock_http_port", "8083");
+		System.setProperty("mock_http_port", "8090");
 		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
-		driver = DriverManager.getDriverVirtualServerService();
-		assertEquals("Mock server for http does not run o port 8083", 8083, driver.port());
+		assertEquals("Runtime Parameter for MOCK_HTTP_PORT is incorrect", "8090", RuntimeParameters.MOCK_HTTP_PORT.getValue());
+		DriverManager.getDriverVirtualService();
+		WireMockServer driver = DriverManager.getDriverVirtualServerService();
+		assertEquals("Mock server for http does not run o specified port", 8090, driver.port());
 	}
 	
 	@Test
@@ -57,18 +57,18 @@ public class DriverManagerTest {
 		
 		WireMockServer driver1 = null;
 		WireMockServer driver2 = null;
-		// DriverManager.closeDriverVirtualServer();
+		DriverManager.closeDriverVirtualServer();
 		try {
 			// Start #1 server
 			driver1 = DriverManager.getDriverVirtualServerService();
 			assertEquals("Mock server for http does not run o port 8081", 8081, driver1.port());
 			
-			// Enable to add new server instances in this thread. Simulation of multithread and bind to the same port
+			// Enable to add new server instances in this thread. Simulation of multi thread and bind to the same port
 			DriverManager.clearAllDrivers();
 			
 			// Start #2 server
 			driver2 = DriverManager.getDriverVirtualServerService();
-			assertEquals("Mock server for http does not run o port 8081", 8081, driver.port());
+			assertEquals("Mock server for http does not run o port 8081", 8081, driver2.port());
 		} catch (FatalStartupException e) {
 			assertTrue("No information about bind error", e.getMessage()
 					.contains("Address already in use: bind"));
@@ -82,10 +82,14 @@ public class DriverManagerTest {
 		}
 	}
 	
-	@After
-	public void afterTest() {
+	@Override
+	public void setUp() {
 		DriverManager.closeDriverVirtualServer();
-		
+	}
+	
+	@Override
+	public void tearDown() {
+		DriverManager.closeDriverVirtualServer();
 	}
 	
 }
