@@ -18,17 +18,17 @@ public class DriverManagerTest_standaloneWiremock extends BaseTest {
 	
 	@Test
 	public void testStandaloneWireMockStartDedicatedPortHttp() {
-		System.setProperty("mock_http_host", "localhost");
+		System.setProperty("mock_http_host", "192.168.1.104");
 		RuntimeParameters.MOCK_HTTP_HOST.refreshParameterValue();
-		assertEquals("System parameters for 'mock_http_host'", "localhost", RuntimeParameters.MOCK_HTTP_HOST.getValue());
+		assertEquals("System parameters for 'mock_http_host'", "192.168.1.104", RuntimeParameters.MOCK_HTTP_HOST.getValue());
 		
-		System.setProperty("mock_http_port", "8101");
+		System.setProperty("mock_http_port", "8100");
 		RuntimeParameters.MOCK_HTTP_PORT.refreshParameterValue();
-		assertEquals("Runtime Parameter for MOCK_HTTP_PORT is incorrect", "8101", RuntimeParameters.MOCK_HTTP_PORT.getValue());
+		assertEquals("Runtime Parameter for MOCK_HTTP_PORT is incorrect", "8100", RuntimeParameters.MOCK_HTTP_PORT.getValue());
 		
 		WireMock driver = DriverManager.getDriverVirtualService();
-		assertEquals("Mock server for http does not run o specified port", 8101, DriverManager.getHttpPort());
-		assertEquals("Mock server for http does not run o specific hostname", "localhost", DriverManager.getHttpHost());
+		assertEquals("Mock server for http does not run o specified port", 8100, DriverManager.getHttpPort());
+		assertEquals("Mock server for http does not run o specific hostname", "192.168.1.104", DriverManager.getHttpHost());
 	}
 	
 	@Test

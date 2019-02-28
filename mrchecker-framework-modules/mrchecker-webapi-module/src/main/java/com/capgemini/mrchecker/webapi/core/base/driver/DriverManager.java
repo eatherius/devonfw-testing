@@ -115,7 +115,7 @@ public class DriverManager {
 			
 			try {
 				if (null != driver) {
-					driver.shutdown();
+					// driver.shutdown();
 				}
 				
 				if (null != driverServer) {
@@ -160,9 +160,7 @@ public class DriverManager {
 				int httpPort = getPort();
 				String httpHost = getHost();
 				
-				// if ("".equals(httpHost) || "http://localhost".equals(httpHost) ||
-				// "https://localhost".equals(httpHost)) {
-				if ("".equals(httpHost)) {
+				if ("".equals(httpHost) || "http://localhost".equals(httpHost) || "https://localhost".equals(httpHost)) {
 					WireMockConfiguration wireMockConfig = wireMockConfig().extensions(new BodyTransformer());
 					
 					wireMockConfig.port(httpPort);
