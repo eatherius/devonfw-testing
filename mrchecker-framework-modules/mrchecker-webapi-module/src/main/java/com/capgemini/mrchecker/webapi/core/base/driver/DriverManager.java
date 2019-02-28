@@ -111,8 +111,6 @@ public class DriverManager {
 			WireMock driver = virtualizedService.getDriver();
 			WireMockServer driverServer = virtualizedService.getDriverServer();
 			BFLogger.logDebug(
-					"Closing communication to Virualize Server Service under: " + driverServer.toString());
-			BFLogger.logDebug(
 					"Closing communication to Virualize Service under: " + driver.toString());
 			
 			try {
@@ -126,7 +124,6 @@ public class DriverManager {
 				
 			} catch (Exception e) {
 				BFLogger.logDebug("Ooops! Something went wrong while closing the driver");
-				e.printStackTrace();
 			} finally {
 				clearAllDrivers();
 			}
@@ -163,7 +160,9 @@ public class DriverManager {
 				int httpPort = getPort();
 				String httpHost = getHost();
 				
-				if ("".equals(httpHost) || "http://localhost".equals(httpHost) || "https://localhost".equals(httpHost)) {
+				// if ("".equals(httpHost) || "http://localhost".equals(httpHost) ||
+				// "https://localhost".equals(httpHost)) {
+				if ("".equals(httpHost)) {
 					WireMockConfiguration wireMockConfig = wireMockConfig().extensions(new BodyTransformer());
 					
 					wireMockConfig.port(httpPort);
@@ -178,8 +177,9 @@ public class DriverManager {
 					driver = driverServer.getClient();
 				} else {
 					driver = new WireMock(httpHost, httpPort);
+					driver.startStubRecording("http://example.mocklab.io");
+					driver.stopStubRecording();
 				}
-				
 				return new VirtualizedService(driver, driverServer, httpHost, httpPort);
 				
 			}
